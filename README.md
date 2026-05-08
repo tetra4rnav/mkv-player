@@ -7,6 +7,7 @@
 
 - `apps/player`: 再生アプリ本体（React + Pages Functions + D1/R2連携）
 - `apps/transcoder`: `mkv -> hls` ローカル変換基盤（スケルトン）
+- `apps/r2uploader`: R2アップロード専用CLI
 
 ## 技術スタック
 
@@ -34,7 +35,9 @@
 
 - **R2**: 動画の実体ファイル（HLS: `master.m3u8` / `.ts` セグメント / 字幕ファイル）を保存
 - **D1**: タイトル、説明、タグ、サムネキー、再生時間などのメタデータを保存
-- **同期**: R2 上の `master.m3u8` を基準に `/api/library/sync` で D1 へ取り込み
+- **非方針**: R2 オブジェクトメタデータにアプリ用 metadata は保存しない
+- **登録フロー（方針）**: `apps/r2uploader` 実行時に D1 metadata を同時登録する
+- **暫定運用（現状）**: R2 上の `master.m3u8` を基準に `/api/library/sync` で D1 へ取り込み
 
 ---
 
@@ -85,7 +88,7 @@ npm install
   API トークンは Pages の編集権限を含むものを使用
 - **R2 アップロード（ローカル実行）**  
   R2 API トークン管理画面で Access Key / Secret Key を発行し、  
-  `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_ACCOUNT_ID` / `R2_BUCKET` を利用
+  `npm run upload:r2` 実行時に CLI 引数として渡す（`.env` ファイルは使用しない）
 
 ### 6. Cloudflare Access 認証（実装予定 / Issue管理）
 
@@ -111,34 +114,23 @@ npm install
 
 - 変換基盤はローカル環境で `mkv -> HLS` を実行
 - 出力は `movie-title/master.m3u8` を含む HLS ディレクトリ
-- `apps/player` 側はその出力ディレクトリを R2 にアップロードして利用
-- 取り込み後、`/api/library/sync` で D1 メタデータへ反映
+- `apps/r2uploader` 側はその出力ディレクトリを R2 にアップロードし、D1 metadata を同時登録する（設計方針）
+- R2 には HLS 実体のみを保存し、metadata は D1 のみで管理する
+
+### r2uploader の連携管理方針（動的・リアルタイム）
+
+- `apps/r2uploader` は R2/D1 連携のオーケストレーション責務を持つ
+- アップロード完了時に D1 を即時 upsert して、`/api/library/sync` 依存を段階的に下げる
+- 差分検出（reconcile）で R2 と D1 の不整合を修復できる状態を目指す
+- 変更イベントの通知（例: SSE/WebSocket/Queue）で player 側へ反映を高速化する
 
 ### R2にアップロード
-
-`.env.local` を作成し、R2 認証情報を設定（または PowerShell の `$env:` で一時設定）:
-
-```bash
-R2_ACCOUNT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-R2_BUCKET=your-r2-bucket-name
-R2_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxxx
-R2_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-PowerShell で一時設定する場合:
-
-```powershell
-$env:R2_ACCOUNT_ID="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-$env:R2_BUCKET="your-r2-bucket-name"
-$env:R2_ACCESS_KEY_ID="xxxxxxxxxxxxxxxxxxxx"
-$env:R2_SECRET_ACCESS_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-```
 
 アップロード:
 
 ```powershell
 # output/movie の中身を r2://<your-r2-bucket-name>/movie/ へアップロード
-npm run upload:r2 -- --source output/movie --prefix movie
+npm run upload:r2 -- --source output/movie --prefix movie --account-id <cloudflare-account-id> --bucket <your-r2-bucket-name> --access-key-id <r2-access-key-id> --secret-access-key <r2-secret-access-key>
 ```
 
 ### R2のディレクトリ構造例
@@ -165,9 +157,8 @@ npm run dev:player
 
 # ローカルからデプロイ済みPages APIへ透過プロキシしたい場合
 # (CORS回避、wrangler不要)
-# PowerShell:
-$env:VITE_API_PROXY_TARGET="https://your-pages-url.pages.dev"
-npm run dev:player
+# PowerShell で実行:
+$env:VITE_API_PROXY_TARGET="https://your-pages-url.pages.dev"; npm run dev:player
 ```
 
 ---

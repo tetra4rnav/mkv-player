@@ -6,4 +6,4 @@
 
 - ローカル動画入力 (`.mkv`) を受け取る CLI
 - HLS 出力 (`master.m3u8`, `stream_*`, `seg*.ts`)
-- 変換完了後の出力を `@mkv/player` 側の R2 アップロードに連携
+- 変換完了後の出力を `@mkv/r2uploader` 側の R2 アップロードに連携

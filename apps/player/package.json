@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "upload:r2": "node scripts/upload-r2.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -16,7 +15,6 @@
     "video.js": "^8.17.4"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.1045.0",
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.4.8"
   }

@@ -9,6 +9,6 @@
     "dev:player": "npm run dev --workspace @mkv/player",
     "build:player": "npm run build --workspace @mkv/player",
     "preview:player": "npm run preview --workspace @mkv/player",
-    "upload:r2": "npm run upload:r2 --workspace @mkv/player --"
+    "upload:r2": "npm run upload:r2 --workspace @mkv/r2uploader --"
   }
 }

@@ -9,6 +9,10 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === '--source') out.source = argv[i + 1];
     if (a === '--prefix') out.prefix = argv[i + 1];
+    if (a === '--account-id') out.accountId = argv[i + 1];
+    if (a === '--bucket') out.bucket = argv[i + 1];
+    if (a === '--access-key-id') out.accessKeyId = argv[i + 1];
+    if (a === '--secret-access-key') out.secretAccessKey = argv[i + 1];
   }
   return out;
 }
@@ -42,10 +46,8 @@ async function walk(dir) {
   return files;
 }
 
-function required(name) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing environment variable: ${name}`);
-  return value;
+function readArgOrEnv(argValue, envName) {
+  return argValue || process.env[envName] || '';
 }
 
 async function main() {
@@ -54,13 +56,17 @@ async function main() {
   const prefix = (args.prefix || '').replace(/^\/+|\/+$/g, '');
 
   if (!sourceDir) {
-    throw new Error('Usage: npm run upload:r2 -- --source <directory> [--prefix <r2-prefix>]');
+    throw new Error('Usage: npm run upload:r2 -- --source <directory> [--prefix <r2-prefix>] --account-id <id> --bucket <name> --access-key-id <key> --secret-access-key <secret>');
   }
 
-  const accountId = required('R2_ACCOUNT_ID');
-  const bucket = required('R2_BUCKET');
-  const accessKeyId = required('R2_ACCESS_KEY_ID');
-  const secretAccessKey = required('R2_SECRET_ACCESS_KEY');
+  const accountId = readArgOrEnv(args.accountId, 'R2_ACCOUNT_ID');
+  const bucket = readArgOrEnv(args.bucket, 'R2_BUCKET');
+  const accessKeyId = readArgOrEnv(args.accessKeyId, 'R2_ACCESS_KEY_ID');
+  const secretAccessKey = readArgOrEnv(args.secretAccessKey, 'R2_SECRET_ACCESS_KEY');
+  if (!accountId) throw new Error('Missing --account-id (or R2_ACCOUNT_ID)');
+  if (!bucket) throw new Error('Missing --bucket (or R2_BUCKET)');
+  if (!accessKeyId) throw new Error('Missing --access-key-id (or R2_ACCESS_KEY_ID)');
+  if (!secretAccessKey) throw new Error('Missing --secret-access-key (or R2_SECRET_ACCESS_KEY)');
 
   const client = new S3Client({
     region: 'auto',
