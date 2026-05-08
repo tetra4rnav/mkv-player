@@ -1,3 +1,7 @@
+# Build output
+dist/
+output/
+
 # Wrangler
 .wrangler/
 .dev.vars
@@ -5,6 +9,7 @@
 # Node
 node_modules/
 npm-debug.log*
+*.log
 
 # OS
 .DS_Store

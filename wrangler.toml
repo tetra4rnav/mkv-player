@@ -1,15 +1,7 @@
 name            = "mkv-player"
-main            = "src/index.js"
 compatibility_date = "2024-09-23"
-workers_dev     = true
+pages_build_output_dir = "dist"
 
-# ── R2 bucket binding ──────────────────────────────────────────
-# バケット名は実際のものに変更してください
 [[r2_buckets]]
 binding     = "MEDIA_BUCKET"
 bucket_name = "my-mkv-files"
-
-# ── Routes (カスタムドメインがある場合) ───────────────────────
-# [[routes]]
-# pattern = "video.yourdomain.com/*"
-# zone_name = "yourdomain.com"
