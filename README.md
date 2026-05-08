@@ -74,6 +74,29 @@ npm install
 - `CLOUDFLARE_ACCOUNT_ID`  
   Cloudflare ダッシュボード右サイドバーのアカウント ID
 
+### 5. Cloudflare 認証情報の整理
+
+このリポジトリでは `wrangler` を使わず、用途別に認証情報を分けます。
+
+- **Cloudflare ダッシュボード操作**  
+  通常の Cloudflare ログイン（メール/SSO）で設定作業を実施
+- **Pages デプロイ（GitHub Actions）**  
+  `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を GitHub Secrets に設定  
+  API トークンは Pages の編集権限を含むものを使用
+- **R2 アップロード（ローカル実行）**  
+  R2 API トークン管理画面で Access Key / Secret Key を発行し、  
+  `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_ACCOUNT_ID` / `R2_BUCKET` を利用
+
+### 6. Cloudflare Access 認証（実装予定 / Issue管理）
+
+現時点では未実装です。Cloudflare Access によるアプリ保護は Issue で管理し、後続で実装します。
+
+- Issue タイトル案: `feat: protect player app with Cloudflare Access`
+- 予定スコープ:
+  - Cloudflare Access で `apps/player` へのアクセス制御を有効化
+  - 許可ユーザー/グループのポリシー定義
+  - ローカル開発・運用手順（Access有効時）のREADME反映
+
 ---
 
 ## 動画の変換とアップロード
