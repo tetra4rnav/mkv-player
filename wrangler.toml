@@ -4,9 +4,9 @@ pages_build_output_dir = "dist"
 
 [[r2_buckets]]
 binding     = "MEDIA_BUCKET"
-bucket_name = "my-mkv-files"
+bucket_name = "mkv-player-files"
 
 [[d1_databases]]
 binding       = "DB"
-database_name = "mkv-library"
-database_id   = "PLACEHOLDER"
+database_name = "mkv-player-library"
+database_id   = "d66409b0-2044-404e-b4e7-f6d2c89efd13"
