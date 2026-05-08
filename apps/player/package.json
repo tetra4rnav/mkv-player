@@ -1,0 +1,23 @@
+{
+  "name": "@mkv/player",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "upload:r2": "node scripts/upload-r2.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "video.js": "^8.17.4"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1045.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}

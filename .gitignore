@@ -1,13 +1,18 @@
 # Build output
 dist/
 output/
+**/dist/
+**/output/
 
 # Wrangler
 .wrangler/
 .dev.vars
+**/.wrangler/
+**/.dev.vars
 
 # Node
 node_modules/
+**/node_modules/
 npm-debug.log*
 *.log
 
@@ -18,4 +23,5 @@ Thumbs.db
 # Env / secrets (絶対にコミットしない)
 .env
 .env.*
+!.env.example
 *.secret

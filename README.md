@@ -3,6 +3,12 @@
 クロスプラットフォーム対応のプライベート動画ライブラリ。
 **Chrome / Firefox / Safari / iPad / Android** すべてで再生可能。
 
+## リポジトリ構成 (Monorepo風)
+
+- `apps/player`: 再生アプリ本体（React + Pages Functions + D1/R2連携）
+- `apps/transcoder`: `mkv -> hls` ローカル変換基盤（スケルトン）
+- `packages/*`: 将来的な共有パッケージ領域
+
 ## 技術スタック
 
 | レイヤー | 技術 |
@@ -25,6 +31,14 @@
 
 ---
 
+## データ管理方針
+
+- **R2**: 動画の実体ファイル（HLS: `master.m3u8` / `.ts` セグメント / 字幕ファイル）を保存
+- **D1**: タイトル、説明、タグ、サムネキー、再生時間などのメタデータを保存
+- **同期**: R2 上の `master.m3u8` を基準に `/api/library/sync` で D1 へ取り込み
+
+---
+
 ## セットアップ
 
 ### 1. インストール
@@ -33,64 +47,77 @@
 npm install
 ```
 
-### 2. R2バケット作成
+### 2. Cloudflare 側の準備（ダッシュボード）
 
-```bash
-wrangler r2 bucket create my-mkv-files
-# wrangler.toml の bucket_name を合わせる
-```
+- R2 バケット作成（任意の名前）
+- D1 データベース作成（任意の名前）
+- D1 コンソールで `apps/player/migrations/0001_init.sql` を実行
+- Pages プロジェクトを Git 連携で作成し、Functions バインディングを設定
+  - R2: 変数名 `MEDIA_BUCKET`
+  - D1: 変数名 `DB`
 
 ### 3. ビルド & デプロイ
 
-```bash
-npm run deploy
-# = npm run build && wrangler pages deploy dist
-```
+- `main` へ push すると Pages が自動ビルド/デプロイ
+- `wrangler` は不要
 
-### 4. D1ライブラリ設定
+### 4. GitHub Actions Secrets
 
-```bash
-# D1データベース作成
-wrangler d1 create mkv-library
-# → 出力された database_id を wrangler.toml に記入
+リポジトリ `Settings -> Secrets and variables -> Actions` で以下を追加:
 
-# マイグレーション実行
-wrangler d1 execute mkv-library --file=migrations/0001_init.sql
-
-# 既存のR2動画をDBに同期 (デプロイ後、管理画面の「R2同期」でも実行可能)
-curl -X POST https://your-pages-url.pages.dev/api/library/sync
-
-# デプロイ
-npm run deploy
-```
+- `CLOUDFLARE_API_TOKEN`  
+  Cloudflare の API トークン（Pages を編集できる権限）
+- `CLOUDFLARE_ACCOUNT_ID`  
+  Cloudflare ダッシュボード右サイドバーのアカウント ID
 
 ---
 
 ## 動画の変換とアップロード
 
-### MKV → HLS変換 (ローカルで実行)
+### 変換ポリシー
 
-```bash
-chmod +x scripts/convert.sh
-./scripts/convert.sh movie.mkv output/
-```
+- このリポジトリは **再生アプリ + メタデータ管理** を主目的とします。
+- `mkv -> HLS` の変換処理は `apps/transcoder`（ローカル変換基盤）に実装していく想定です。
+- 現時点では「**生成済み HLS を R2 に配置する**」手順のみを扱います。
 
-音声トラックを自動検出してHLSに変換します。
+### 連携前提（transcoderアプリ）
+
+- 変換基盤はローカル環境で `mkv -> HLS` を実行
+- 出力は `movie-title/master.m3u8` を含む HLS ディレクトリ
+- `apps/player` 側はその出力ディレクトリを R2 にアップロードして利用
+- 取り込み後、`/api/library/sync` で D1 メタデータへ反映
 
 ### R2にアップロード
 
-```bash
-# 変換後のディレクトリをまるごとアップロード
-wrangler r2 object put my-mkv-files --recursive --local-path output/movie/
+`.env.local` を作成し、R2 認証情報を設定（または PowerShell の `$env:` で一時設定）:
 
-# または rclone を使う場合
-rclone copy output/ r2:my-mkv-files --progress
+```bash
+R2_ACCOUNT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+R2_BUCKET=your-r2-bucket-name
+R2_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxxx
+R2_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+PowerShell で一時設定する場合:
+
+```powershell
+$env:R2_ACCOUNT_ID="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+$env:R2_BUCKET="your-r2-bucket-name"
+$env:R2_ACCESS_KEY_ID="xxxxxxxxxxxxxxxxxxxx"
+$env:R2_SECRET_ACCESS_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+アップロード:
+
+```powershell
+# output/movie の中身を r2://<your-r2-bucket-name>/movie/ へアップロード
+npm run upload:r2 -- --source output/movie --prefix movie
 ```
 
 ### R2のディレクトリ構造例
 
 ```
-my-mkv-files/
+<your-r2-bucket-name>/
 └── movie-title/
     ├── master.m3u8          ← ブラウザで開くファイル
     ├── stream_0/            ← 映像 + 音声トラック1
@@ -106,8 +133,14 @@ my-mkv-files/
 ## ローカル開発
 
 ```bash
-wrangler pages dev --remote
-# --remote でR2への実際のアクセスが可能
+# player アプリを起動（APIは相対パス）
+npm run dev:player
+
+# ローカルからデプロイ済みPages APIへ透過プロキシしたい場合
+# (CORS回避、wrangler不要)
+# PowerShell:
+$env:VITE_API_PROXY_TARGET="https://your-pages-url.pages.dev"
+npm run dev:player
 ```
 
 ---
