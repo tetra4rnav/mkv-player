@@ -15,7 +15,6 @@
 
 ## 機能
 
-- 🔐 パスワード認証 (JWT cookie)
 - 📁 フォルダ階層ブラウザ
 - 🎬 HLS ストリーミング再生 (クロスプラットフォーム)
 - 🎵 **音声トラック切替** (日本語/英語など)
@@ -41,21 +40,14 @@ wrangler r2 bucket create my-mkv-files
 # wrangler.toml の bucket_name を合わせる
 ```
 
-### 3. Secrets設定
-
-```bash
-wrangler pages secret put AUTH_PASSWORD   # ログインパスワード
-wrangler pages secret put JWT_SECRET      # openssl rand -hex 32
-```
-
-### 4. ビルド & デプロイ
+### 3. ビルド & デプロイ
 
 ```bash
 npm run deploy
 # = npm run build && wrangler pages deploy dist
 ```
 
-### 5. D1ライブラリ設定
+### 4. D1ライブラリ設定
 
 ```bash
 # D1データベース作成
@@ -66,8 +58,7 @@ wrangler d1 create mkv-library
 wrangler d1 execute mkv-library --file=migrations/0001_init.sql
 
 # 既存のR2動画をDBに同期 (デプロイ後、管理画面の「R2同期」でも実行可能)
-curl -X POST https://your-pages-url.pages.dev/api/library/sync \
-  -H "Cookie: mkv_token=<your_token>"
+curl -X POST https://your-pages-url.pages.dev/api/library/sync
 
 # デプロイ
 npm run deploy

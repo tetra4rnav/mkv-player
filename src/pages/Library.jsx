@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../App.jsx';
+import { Link } from 'react-router-dom';
 import styles from './Library.module.css';
 
 const emptyForm = {
@@ -22,8 +21,6 @@ function formatDate(value) {
 }
 
 export default function Library() {
-  const { setAuthed } = useAuth();
-  const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -50,12 +47,6 @@ export default function Library() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
-  async function logout() {
-    await fetch('/api/logout');
-    setAuthed(false);
-    navigate('/login', { replace: true });
-  }
 
   async function syncFromR2() {
     setBusy(true);
@@ -148,7 +139,6 @@ export default function Library() {
         </div>
         <div className={styles.headerActions}>
           <Link to="/" className="btn btn-ghost">ブラウザへ戻る</Link>
-          <button className="btn btn-ghost" onClick={logout}>ログアウト</button>
         </div>
       </header>
 

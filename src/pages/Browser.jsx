@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../App.jsx';
 import styles from './Browser.module.css';
 
 function formatSize(b) {
@@ -23,7 +22,6 @@ export default function Browser() {
   const [order, setOrder] = useState('desc');
   const [selectedTags, setSelectedTags] = useState([]);
 
-  const { setAuthed } = useAuth();
   const navigate = useNavigate();
 
   const load = useCallback(async (p) => {
@@ -55,12 +53,6 @@ export default function Browser() {
   }, [query, sort, order]);
 
   useEffect(() => { loadLibrary(); }, [loadLibrary]);
-
-  async function logout() {
-    await fetch('/api/logout');
-    setAuthed(false);
-    navigate('/login', { replace: true });
-  }
 
   function navTo(p) { setPrefix(p); setData(null); }
 
@@ -106,7 +98,6 @@ export default function Browser() {
         </div>
         <div className={styles.headerActions}>
           <Link className={`btn btn-ghost ${styles.headerLink}`} to="/library">ライブラリ管理</Link>
-          <button className="btn btn-ghost" onClick={logout}>ログアウト</button>
         </div>
       </header>
 

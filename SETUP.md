@@ -21,9 +21,6 @@
 - バインディング (設定 → 関数):
   - R2: 変数名 `MEDIA_BUCKET` → バケット `my-mkv-files`
   - D1: 変数名 `DB` → データベース `mkv-library`
-- 環境変数 (設定 → 環境変数):
-  - `AUTH_PASSWORD`: ログインパスワード
-  - `JWT_SECRET`: ランダム文字列（パスワードマネージャー等で32文字以上生成）
 
 ## GitHub Actions Secrets の設定
 
