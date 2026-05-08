@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import Login   from './pages/Login.jsx';
 import Browser from './pages/Browser.jsx';
 import Player  from './pages/Player.jsx';
+import Library from './pages/Library.jsx';
 
 // ── Auth context ──────────────────────────────────────────────
 const AuthContext = createContext(null);
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/login"  element={<Login />} />
           <Route path="/"       element={<RequireAuth><Browser /></RequireAuth>} />
           <Route path="/player" element={<RequireAuth><Player /></RequireAuth>} />
+          <Route path="/library" element={<RequireAuth><Library /></RequireAuth>} />
           <Route path="*"       element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

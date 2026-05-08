@@ -5,3 +5,8 @@ pages_build_output_dir = "dist"
 [[r2_buckets]]
 binding     = "MEDIA_BUCKET"
 bucket_name = "my-mkv-files"
+
+[[d1_databases]]
+binding       = "DB"
+database_name = "mkv-library"
+database_id   = "PLACEHOLDER"

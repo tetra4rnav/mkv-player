@@ -55,6 +55,24 @@ npm run deploy
 # = npm run build && wrangler pages deploy dist
 ```
 
+### 5. D1ライブラリ設定
+
+```bash
+# D1データベース作成
+wrangler d1 create mkv-library
+# → 出力された database_id を wrangler.toml に記入
+
+# マイグレーション実行
+wrangler d1 execute mkv-library --file=migrations/0001_init.sql
+
+# 既存のR2動画をDBに同期 (デプロイ後、管理画面の「R2同期」でも実行可能)
+curl -X POST https://your-pages-url.pages.dev/api/library/sync \
+  -H "Cookie: mkv_token=<your_token>"
+
+# デプロイ
+npm run deploy
+```
+
 ---
 
 ## 動画の変換とアップロード
