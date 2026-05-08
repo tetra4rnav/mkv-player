@@ -7,7 +7,6 @@
 
 - `apps/player`: 再生アプリ本体（React + Pages Functions + D1/R2連携）
 - `apps/transcoder`: `mkv -> hls` ローカル変換基盤（スケルトン）
-- `packages/*`: 将来的な共有パッケージ領域
 
 ## 技術スタック
 
@@ -52,14 +51,19 @@ npm install
 - R2 バケット作成（任意の名前）
 - D1 データベース作成（任意の名前）
 - D1 コンソールで `apps/player/migrations/0001_init.sql` を実行
-- Pages プロジェクトを Git 連携で作成し、Functions バインディングを設定
+- Pages プロジェクトを Git 連携で作成し、Functions バインディングを設定（ダッシュボードで設定）
   - R2: 変数名 `MEDIA_BUCKET`
   - D1: 変数名 `DB`
+- `wrangler.toml` は使用しません（設定はすべて Cloudflare ダッシュボードで管理）
 
 ### 3. ビルド & デプロイ
 
 - `main` へ push すると Pages が自動ビルド/デプロイ
 - `wrangler` は不要
+- Pages の Build 設定は以下を使用:
+  - Root directory: `apps/player`
+  - Build command: `npm run build:player`
+  - Build output directory: `dist`
 
 ### 4. GitHub Actions Secrets
 
