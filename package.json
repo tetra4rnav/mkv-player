@@ -10,5 +10,8 @@
     "build:player": "npm run build --workspace @mkv/player",
     "preview:player": "npm run preview --workspace @mkv/player",
     "upload:gcs": "npm run upload:gcs --workspace @mkv/gcsuploader --"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.62.2"
   }
 }
