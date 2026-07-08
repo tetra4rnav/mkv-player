@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import AccessDeniedCard from '@/components/shared/AccessDeniedCard.jsx';
 
 const emptyForm = {
   title: '',
@@ -162,16 +162,7 @@ export default function Library() {
   )), [videos]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="text-lg font-semibold">ライブラリ管理</div>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/">ブラウザへ戻る</Link>
-          </Button>
-        </div>
-      </header>
-
+    <>
       <main className="mx-auto w-full max-w-7xl space-y-4 px-4 py-6">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold">動画一覧</h1>
@@ -180,14 +171,7 @@ export default function Library() {
           </Button>
         </div>
 
-        {accessDenied && (
-          <Alert variant="destructive">
-            <AlertTitle>Access denied</AlertTitle>
-            <AlertDescription>
-              Cloudflare Access で許可されたメールアドレスでログインしてください。
-            </AlertDescription>
-          </Alert>
-        )}
+        {accessDenied && <AccessDeniedCard />}
 
         {!!error && (
           <Alert variant="destructive">
@@ -279,6 +263,6 @@ export default function Library() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

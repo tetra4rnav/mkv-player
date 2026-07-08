@@ -1,14 +1,16 @@
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import VideoPlayer from '../components/VideoPlayer.jsx';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import AccessDeniedCard from '@/components/shared/AccessDeniedCard.jsx';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const RESUME_KEY = (key) => 'mkv_pos_' + key;
 
 export default function Player() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
 
   const key   = searchParams.get('key') || '';
   const subtitleKey = searchParams.get('subtitle') || '';
@@ -26,6 +28,13 @@ export default function Player() {
   const sourceType = isHLS ? 'application/x-mpegURL' : 'video/mp4';
 
   useEffect(() => {
+    // Reset UI state when navigating to a different video.
+    setAccessDenied(false);
+    setCheckedAccess(false);
+    setShowResume(false);
+    setPlayerReady(false);
+    setResumePos(0);
+
     document.title = title + ' – MKV Player';
 
     // Check resume position
@@ -56,49 +65,90 @@ export default function Player() {
 
   function handleEnded() { localStorage.removeItem(RESUME_KEY(key)); }
 
+  const hasKey = Boolean(key);
+
   return (
     <>
-      <header className="app-header">
-        <Button variant="outline" size="sm" onClick={() => navigate(-1)}>← 戻る</Button>
-        <span className="flex-1 truncate px-3 text-center text-sm text-muted-foreground">{title}</span>
-        <div style={{ width: 80 }} />
-      </header>
+      <main className="mx-auto w-full max-w-7xl px-4 py-6">
+        {!checkedAccess ? (
+          <div className="grid gap-4 md:grid-cols-[1fr_340px]">
+            <Card>
+              <CardContent className="p-0">
+                <Skeleton className="aspect-video w-full rounded-xl" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="space-y-3 p-4">
+                <Skeleton className="h-6 w-3/5" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-4/5" />
+              </CardContent>
+            </Card>
+          </div>
+        ) : accessDenied ? (
+          <Card>
+            <CardContent className="p-4">
+              <AccessDeniedCard />
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-[1fr_340px] items-start">
+            <Card>
+              <CardContent className="p-0">
+                {hasKey ? (
+                  <VideoPlayer
+                    src={streamUrl}
+                    type={sourceType}
+                    subtitleKey={subtitleKey}
+                    seekTo={showResume ? null : undefined}
+                    onTimeUpdate={handleTimeUpdate}
+                    onEnded={handleEnded}
+                    onReady={() => setPlayerReady(true)}
+                  />
+                ) : (
+                  <div className="p-6 text-sm text-muted-foreground">
+                    動画が指定されていません。ライブラリから動画を選択してください。
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-      {!checkedAccess ? (
-        <div className="mx-auto max-w-[1160px] px-4 py-10 text-sm text-muted-foreground">読み込み中...</div>
-      ) : accessDenied ? (
-        <div className="mx-auto max-w-[1160px] px-4 py-10">
-          <Alert variant="destructive">
-            <AlertTitle>Access denied</AlertTitle>
-            <AlertDescription>
-              Cloudflare Access で許可されたメールアドレスでログインしてください。
-            </AlertDescription>
-          </Alert>
-        </div>
-      ) : (
-        <div className="mx-auto max-w-[1160px] px-4 py-5">
-          <VideoPlayer
-            src={streamUrl}
-            type={sourceType}
-            subtitleKey={subtitleKey}
-            seekTo={showResume ? null : undefined}
-            onTimeUpdate={handleTimeUpdate}
-            onEnded={handleEnded}
-            onReady={() => setPlayerReady(true)}
-          />
+            <Card>
+              <CardContent className="space-y-4 p-4">
+                <div>
+                  <div className="text-lg font-semibold truncate">{title}</div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    {hasKey ? (isHLS ? 'HLS' : 'MP4') : 'No video'}
+                  </div>
+                </div>
 
-          {!subtitleKey && (
-            <div className="mt-4 flex flex-wrap items-center gap-4 rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-              字幕はプレーヤーメニューまたはライブラリ編集で設定できます。
-            </div>
-          )}
-        </div>
-      )}
+                {hasKey && !subtitleKey && (
+                  <Alert>
+                    <AlertTitle>字幕</AlertTitle>
+                    <AlertDescription>
+                      字幕はプレーヤーメニューまたはライブラリ編集で設定できます。
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {!hasKey && (
+                  <Alert variant="destructive">
+                    <AlertTitle>動画未指定</AlertTitle>
+                    <AlertDescription>
+                      `key` パラメータがありません。ライブラリから選択してください。
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </main>
 
       {/* Resume toast */}
       {checkedAccess && !accessDenied && showResume && playerReady && (
         <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl border bg-card px-5 py-3 text-sm shadow-lg">
-          <span>⏱ {Math.floor(resumePos / 60)}:{String(Math.floor(resumePos % 60)).padStart(2,'0')} から再開しますか？</span>
+          <span>⏱ {Math.floor(resumePos / 60)}:{String(Math.floor(resumePos % 60)).padStart(2, '0')} から再開しますか？</span>
           <Button
             size="sm"
             onClick={() => { setShowResume(false); setResumePos(resumePos); }}
