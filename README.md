@@ -44,8 +44,7 @@ gs://mkv-player/
 
 ## 環境変数（Pages）
 
-- `GCS_BUCKET=mkv-player`
-- `GCS_SERVICE_ACCOUNT_JSON=<service account json string>`
+`GCS_BUCKET` と `GCS_SERVICE_ACCOUNT_JSON` を Cloudflare Pages の環境変数に設定してください。詳細は下記「Cloudflare Pages」を参照。
 
 ## セットアップ
 
@@ -56,8 +55,22 @@ npm install
 ### Cloudflare Pages
 
 - Root directory: `apps/player`
-- Build command: `npm run build:player`
+- Build command: `npm run build`
 - Output directory: `dist`
+
+#### Bindings
+
+GCS 移行済みのため **R2 / D1 バインディングは不要** です。ダッシュボードに残っている場合は削除してください。
+
+- 削除: R2 `MEDIA_BUCKET` → `mkv-player-files`
+- 削除: D1 `DB` → `mkv-player-library`（メタデータは GCS の `_library/index.json` を使用）
+
+[`apps/player/wrangler.toml`](apps/player/wrangler.toml) にバインディングを定義していないため、デプロイ後はリポジトリ設定が正となります。
+
+#### 環境変数（Pages）
+
+- `GCS_BUCKET=mkv-player`
+- `GCS_SERVICE_ACCOUNT_JSON=<service account json string>`
 
 ### Cloudflare Access（メール認証）
 
