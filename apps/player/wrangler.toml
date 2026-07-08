@@ -9,5 +9,5 @@ pages_build_output_dir = "./dist"
 #   CF_ACCESS_TEAM_DOMAIN=https://<team>.cloudflareaccess.com
 
 [vars]
-CF_ACCESS_AUD = "bf55bd9f-239d-46bd-8a30-643d999f3d88"
+CF_ACCESS_AUD = "8aeb575d05524093eabb2a4bf0addcdba74a479d5d815927db2f137fdc726788"
 CF_ACCESS_TEAM_DOMAIN = "https://tetra4rnav.cloudflareaccess.com"
