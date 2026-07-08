@@ -3,6 +3,11 @@ compatibility_date = "2024-09-23"
 pages_build_output_dir = "./dist"
 
 # Storage bindings are not used — media and library metadata live in GCS.
-# Required Pages env vars (set in dashboard):
+# Required Pages env vars (set in dashboard unless noted):
 #   GCS_BUCKET
 #   GCS_SERVICE_ACCOUNT_JSON
+#   CF_ACCESS_TEAM_DOMAIN=https://<team>.cloudflareaccess.com
+
+[vars]
+CF_ACCESS_AUD = "bf55bd9f-239d-46bd-8a30-643d999f3d88"
+CF_ACCESS_TEAM_DOMAIN = "https://tetra4rnav.cloudflareaccess.com"

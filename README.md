@@ -44,7 +44,7 @@ gs://mkv-player/
 
 ## 環境変数（Pages）
 
-`GCS_BUCKET` と `GCS_SERVICE_ACCOUNT_JSON` を Cloudflare Pages の環境変数に設定してください。詳細は下記「Cloudflare Pages」を参照。
+`GCS_BUCKET` / `GCS_SERVICE_ACCOUNT_JSON` / `CF_ACCESS_TEAM_DOMAIN` を Cloudflare Pages の環境変数に設定してください。`CF_ACCESS_AUD` は [`apps/player/wrangler.toml`](apps/player/wrangler.toml) で定義済みです。詳細は下記「Cloudflare Pages」を参照。
 
 ## セットアップ
 
@@ -69,8 +69,12 @@ GCS 移行済みのため **R2 / D1 バインディングは不要** です。�
 
 #### 環境変数（Pages）
 
-- `GCS_BUCKET=mkv-player`
-- `GCS_SERVICE_ACCOUNT_JSON=<service account json string>`
+| 変数 | 設定場所 | 説明 |
+|---|---|---|
+| `GCS_BUCKET` | Dashboard | GCS バケット名（例: `mkv-player`） |
+| `GCS_SERVICE_ACCOUNT_JSON` | Dashboard（Secret） | サービスアカウント JSON 文字列 |
+| `CF_ACCESS_AUD` | `wrangler.toml` | Access Application の AUD |
+| `CF_ACCESS_TEAM_DOMAIN` | Dashboard | チームドメイン（例: `https://<team>.cloudflareaccess.com`） |
 
 ### Cloudflare Access（メール認証）
 
@@ -78,8 +82,9 @@ GCS 移行済みのため **R2 / D1 バインディングは不要** です。�
 2. 対象: `*.pages.dev`（必要ならカスタムドメインも追加）
 3. Policy: `Allow` + `Emails`
 4. 許可メールアドレスを登録
+5. Application の **AUD** を `CF_ACCESS_AUD` に、**Team domain** を `CF_ACCESS_TEAM_DOMAIN` に設定
 
-> API は `cf-access-authenticated-user-email` ヘッダがない場合 `401` を返します。
+> API は `CF-Access-JWT-Assertion` を検証します。`CF_ACCESS_AUD` 未設定時のみ `cf-access-authenticated-user-email` ヘッダで判定します。
 
 ## ローカル開発
 
