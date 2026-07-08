@@ -1,3 +1,5 @@
+import { getObject } from '../../_shared/gcs.js';
+
 function srtToVtt(srt) {
   return 'WEBVTT\n\n' + srt
     .replace(/\r\n/g, '\n')
@@ -49,10 +51,10 @@ export async function onRequestGet({ env, params }) {
   const key     = (params.key || []).join('/');
   const decoded = decodeURIComponent(key);
 
-  const obj = await env.MEDIA_BUCKET.get(decoded);
-  if (!obj) return new Response('Not Found', { status: 404 });
+  const objRes = await getObject(env, decoded, { alt: 'media' });
+  if (!objRes) return new Response('Not Found', { status: 404 });
 
-  const text = await obj.text();
+  const text = await objRes.text();
   const ext  = decoded.split('.').pop().toLowerCase();
 
   let vtt;

@@ -11,7 +11,6 @@ export default function App() {
         <Route path="/" element={<Browser />} />
         <Route path="/player" element={<Player />} />
         <Route path="/library" element={<Library />} />
-        <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

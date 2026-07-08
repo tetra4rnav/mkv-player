@@ -1,11 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'node:path';
 
 export default defineConfig(() => {
   const apiProxyTarget = process.env.VITE_API_PROXY_TARGET;
 
   return {
     plugins: [react()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
     server: apiProxyTarget ? {
       proxy: {
         '/api': {

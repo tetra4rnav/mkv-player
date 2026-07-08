@@ -1,6 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import styles from './Library.module.css';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 
 const emptyForm = {
   title: '',
@@ -48,12 +61,12 @@ export default function Library() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function syncFromR2() {
+  async function syncFromGcs() {
     setBusy(true);
     setError('');
     const response = await fetch('/api/library/sync', { method: 'POST' });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) setError(payload.error || 'R2同期に失敗しました');
+    if (!response.ok) setError(payload.error || 'GCS同期に失敗しました');
     await load();
     setBusy(false);
   }
@@ -115,126 +128,127 @@ export default function Library() {
   }
 
   const rows = useMemo(() => videos.map(video => (
-    <tr key={video.id}>
-      <td>{video.title}</td>
-      <td>
-        <div className={styles.tagsCell}>
-          {(video.tags || []).map(tag => <span key={tag} className={styles.tag}>{tag}</span>)}
+    <TableRow key={video.id}>
+      <TableCell>{video.title}</TableCell>
+      <TableCell>
+        <div className="flex flex-wrap gap-2">
+          {(video.tags || []).map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
         </div>
-      </td>
-      <td>{formatDate(video.added_at)}</td>
-      <td className={styles.actionsCell}>
-        <button className="btn btn-ghost" onClick={() => openEditor(video)}>編集</button>
-        <button className="btn btn-ghost" onClick={() => deleteVideo(video)}>削除</button>
-      </td>
-    </tr>
+      </TableCell>
+      <TableCell>{formatDate(video.added_at)}</TableCell>
+      <TableCell>
+        <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={() => openEditor(video)}>編集</Button>
+        <Button variant="destructive" size="sm" onClick={() => deleteVideo(video)}>削除</Button>
+        </div>
+      </TableCell>
+    </TableRow>
   )), [videos]);
 
   return (
-    <>
-      <header className="app-header">
-        <div className="app-logo">
-          <span>🎬</span>
-          <span>MKV Player</span>
-        </div>
-        <div className={styles.headerActions}>
-          <Link to="/" className="btn btn-ghost">ブラウザへ戻る</Link>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+          <div className="text-lg font-semibold">ライブラリ管理</div>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/">ブラウザへ戻る</Link>
+          </Button>
         </div>
       </header>
 
-      <div className={styles.container}>
-        <div className={styles.toolbar}>
-          <h1 className={styles.title}>ライブラリ管理</h1>
-          <button className="btn btn-primary" onClick={syncFromR2} disabled={busy}>
-            {busy ? '同期中...' : 'R2同期'}
-          </button>
+      <main className="mx-auto w-full max-w-7xl space-y-4 px-4 py-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold">動画一覧</h1>
+          <Button onClick={syncFromGcs} disabled={busy}>
+            {busy ? '同期中...' : 'GCS同期'}
+          </Button>
         </div>
 
-        {error && <div className={styles.error}>{error}</div>}
+        {error && <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
         {loading ? (
-          <div className={styles.loading}><span className="spinner" />読み込み中...</div>
+          <div className="text-sm text-muted-foreground">読み込み中...</div>
         ) : (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>タイトル</th>
-                  <th>タグ</th>
-                  <th>追加日</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>タイトル</TableHead>
+                  <TableHead>タグ</TableHead>
+                  <TableHead>追加日</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {rows}
                 {!rows.length && (
-                  <tr>
-                    <td colSpan={4} className={styles.emptyCell}>動画がありません</td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">動画がありません</TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-      </div>
+      </main>
 
-      {editing && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <h2 className={styles.modalTitle}>動画を編集</h2>
-            <p className={styles.modalSub}>{editing.r2_key}</p>
-            <form onSubmit={saveEdit} className={styles.form}>
-              <label className={styles.field}>
-                <span>タイトル</span>
-                <input
+      <Dialog open={Boolean(editing)} onOpenChange={open => !open && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>動画を編集</DialogTitle>
+            <DialogDescription>{editing?.key}</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={saveEdit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>タイトル</Label>
+              <Input
                   value={form.title}
                   onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))}
                   required
-                />
-              </label>
-              <label className={styles.field}>
-                <span>説明</span>
-                <textarea
-                  rows={3}
-                  value={form.description}
-                  onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
-                />
-              </label>
-              <label className={styles.field}>
-                <span>タグ (カンマ区切り)</span>
-                <input
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>説明</Label>
+              <Textarea
+                rows={3}
+                value={form.description}
+                onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>タグ (カンマ区切り)</Label>
+              <Input
                   value={form.tagsText}
                   onChange={e => setForm(prev => ({ ...prev, tagsText: e.target.value }))}
-                />
-              </label>
-              <label className={styles.field}>
-                <span>サムネキー</span>
-                <input
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>サムネキー</Label>
+              <Input
                   value={form.thumbnail}
                   onChange={e => setForm(prev => ({ ...prev, thumbnail: e.target.value }))}
-                />
-              </label>
-              <label className={styles.field}>
-                <span>再生時間(秒)</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={form.duration}
-                  onChange={e => setForm(prev => ({ ...prev, duration: e.target.value }))}
-                />
-              </label>
-              <div className={styles.modalActions}>
-                <button type="button" className="btn btn-ghost" onClick={() => setEditing(null)}>
-                  キャンセル
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>再生時間(秒)</Label>
+              <Input
+                type="number"
+                min="0"
+                value={form.duration}
+                onChange={e => setForm(prev => ({ ...prev, duration: e.target.value }))}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditing(null)}>
+                キャンセル
+              </Button>
+              <Button type="submit" disabled={saving}>
                   {saving ? '保存中...' : '保存'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </>
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

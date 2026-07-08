@@ -1,37 +1,26 @@
-function getMime(key) {
-  const ext = key.split('.').pop().toLowerCase();
-  return {
-    mkv:  'video/x-matroska',
-    mp4:  'video/mp4',
-    webm: 'video/webm',
-    avi:  'video/x-msvideo',
-    mov:  'video/quicktime',
-    m4v:  'video/mp4',
-    m3u8: 'application/vnd.apple.mpegurl',
-    ts:   'video/mp2t',
-  }[ext] || 'application/octet-stream';
-}
+import { getMime, getObject } from '../../_shared/gcs.js';
 
 export async function onRequestGet({ request, env, params }) {
   const key     = (params.key || []).join('/');
   const decoded = decodeURIComponent(key);
 
-  const r2obj = await env.MEDIA_BUCKET.get(decoded, { range: request.headers });
-  if (!r2obj) return new Response('Not Found', { status: 404 });
+  const objectRes = await getObject(env, decoded, { range: request.headers, alt: 'media' });
+  if (!objectRes) return new Response('Not Found', { status: 404 });
 
   const headers = new Headers({
-    'Content-Type':  r2obj.httpMetadata?.contentType || getMime(decoded),
+    'Content-Type':  objectRes.headers.get('content-type') || getMime(decoded),
     'Accept-Ranges': 'bytes',
     'Cache-Control': 'private, max-age=3600',
   });
 
-  if (r2obj.range) {
-    const { offset, end } = r2obj.range;
-    headers.set('Content-Range',  'bytes ' + offset + '-' + end + '/' + r2obj.size);
-    headers.set('Content-Length', String(end - offset + 1));
-    return new Response(r2obj.body, { status: 206, headers });
+  const contentRange = objectRes.headers.get('content-range');
+  const contentLength = objectRes.headers.get('content-length');
+  if (contentRange) {
+    headers.set('Content-Range', contentRange);
+    if (contentLength) headers.set('Content-Length', contentLength);
+    return new Response(objectRes.body, { status: 206, headers });
   }
 
-  headers.set('Content-Length', String(r2obj.size));
-  return new Response(r2obj.body, { status: 200, headers });
+  if (contentLength) headers.set('Content-Length', contentLength);
+  return new Response(objectRes.body, { status: 200, headers });
 }

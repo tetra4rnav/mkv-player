@@ -1,40 +1,47 @@
-import { json } from '../../_shared/library.js';
-
-function titleFromKey(key) {
-  const parts = key.split('/').filter(Boolean);
-  if (parts.length < 2) return key;
-  return parts[parts.length - 2];
-}
+import { json, normalizeEntry, readLibraryIndex, writeLibraryIndex } from '../../_shared/library.js';
+import { listObjects } from '../../_shared/gcs.js';
 
 export async function onRequestPost({ env }) {
   try {
-    let cursor;
+    const index = await readLibraryIndex(env);
+    const existingKeys = new Set(index.videos.map(video => video.key));
+
+    let pageToken;
     let added = 0;
     let skipped = 0;
+    let scanned = 0;
 
     do {
-      const listed = await env.MEDIA_BUCKET.list({ cursor, limit: 1000 });
-      cursor = listed.truncated ? listed.cursor : undefined;
+      const listed = await listObjects(env, { maxResults: 1000, pageToken, prefix: 'media/' });
+      pageToken = listed.nextPageToken;
+      const targets = listed.items
+        .map(item => item.name)
+        .filter(key => key.endsWith('/master.m3u8'));
 
-      const targets = listed.objects
-        .map(o => o.key)
-        .filter(key => key.endsWith('/master.m3u8') || key === 'master.m3u8');
-
+      scanned += targets.length;
       for (const key of targets) {
-        const info = await env.DB.prepare(
-          `INSERT INTO videos (r2_key, title, tags, updated_at)
-           VALUES (?, ?, '[]', datetime('now'))
-           ON CONFLICT(r2_key) DO NOTHING`
-        )
-          .bind(key, titleFromKey(key))
-          .run();
-
-        if ((info.meta?.changes || 0) > 0) added += 1;
-        else skipped += 1;
+        if (existingKeys.has(key)) {
+          skipped += 1;
+          continue;
+        }
+        const id = key.split('/')[1] || crypto.randomUUID();
+        index.videos.push(normalizeEntry({
+          id,
+          key,
+          type: 'movie',
+          title: `未登録 ${id.slice(0, 8)}`,
+          tags: [],
+        }));
+        existingKeys.add(key);
+        added += 1;
       }
-    } while (cursor);
+    } while (pageToken);
 
-    return json({ added, skipped });
+    if (added > 0) {
+      await writeLibraryIndex(env, index);
+    }
+
+    return json({ added, skipped, scanned });
   } catch (error) {
     return json({ error: error.message || 'Failed to sync library' }, 500);
   }

@@ -1,9 +1,21 @@
 # @mkv/transcoder
 
-`mkv -> hls` のローカル変換基盤を配置するためのスケルトンです。
+`mkv -> hls` のローカル変換 CLI です。
 
-このディレクトリはまだ実装前で、将来以下を提供する想定です。
+## 使い方
 
-- ローカル動画入力 (`.mkv`) を受け取る CLI
-- HLS 出力 (`master.m3u8`, `stream_*`, `seg*.ts`)
-- 変換完了後の出力を `@mkv/r2uploader` 側の R2 アップロードに連携
+```powershell
+npm run dev --workspace @mkv/transcoder -- `
+  --input .\movie.mkv `
+  --output .\output\movie `
+  --resolutions 1080,720,480 `
+  --segment-seconds 6
+```
+
+## 出力
+
+- `master.m3u8`
+- `1080p/playlist.m3u8`, `720p/playlist.m3u8`, `480p/playlist.m3u8`
+- `audio/a1/playlist.m3u8` など（入力音声トラック数に応じる）
+
+生成後は `@mkv/gcsuploader` で GCS へアップロードする。
