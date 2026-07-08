@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
+import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -14,6 +13,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import AccessDeniedCard from '@/components/shared/AccessDeniedCard.jsx';
+import VideoTile from '@/components/library/VideoTile.jsx';
 
 export default function Browser() {
   const [libraryVideos, setLibraryVideos] = useState([]);
@@ -54,16 +54,23 @@ export default function Browser() {
     setLibraryLoading(false);
   }, [query, sort, order]);
 
-  useEffect(() => { loadLibrary(); }, [loadLibrary]);
+  useEffect(() => {
+    loadLibrary();
+  }, [loadLibrary]);
 
-  function openPlayer(key, title) {
-    navigate('/player?key=' + encodeURIComponent(key) + '&title=' + encodeURIComponent(title));
+  function openPlayer(video) {
+    navigate(
+      '/player?key=' +
+        encodeURIComponent(video.key) +
+        '&title=' +
+        encodeURIComponent(video.title)
+    );
   }
 
   function toggleTag(tag) {
-    setSelectedTags(prev => (
-      prev.includes(tag) ? prev.filter(v => v !== tag) : [...prev, tag]
-    ));
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((v) => v !== tag) : [...prev, tag]
+    );
   }
 
   const allTags = useMemo(() => {
@@ -76,62 +83,73 @@ export default function Browser() {
 
   const filteredLibrary = useMemo(() => {
     if (!selectedTags.length) return libraryVideos;
-    return libraryVideos.filter(video => selectedTags.every(tag => (video.tags || []).includes(tag)));
+    return libraryVideos.filter((video) =>
+      selectedTags.every((tag) => (video.tags || []).includes(tag))
+    );
   }, [libraryVideos, selectedTags]);
 
-  function formatDuration(seconds) {
-    if (!seconds) return '--';
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
-  }
-
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>ライブラリ</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {accessDenied && <AccessDeniedCard />}
+    <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-8 md:px-6 md:pt-12">
+      <section className="cinema-fade-up mb-10 max-w-3xl space-y-3">
+        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+          MKV Player
+        </h1>
+        <p className="text-base text-muted-foreground md:text-lg">
+          コレクションから選んで、シアターで再生。
+        </p>
+      </section>
 
-          {!!error && (
-            <Alert variant="destructive">
-              <AlertTitle>エラー</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+      {accessDenied && (
+        <div className="mb-8 cinema-fade-in">
+          <AccessDeniedCard />
+        </div>
+      )}
 
-          <div className="grid gap-3 md:grid-cols-3">
-            <Input
-              placeholder="タイトル・説明を検索"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-            <Select value={sort} onValueChange={setSort}>
-              <SelectTrigger>
-                <SelectValue placeholder="並び順" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="added_at">追加日</SelectItem>
-                <SelectItem value="title">タイトル</SelectItem>
-                <SelectItem value="duration">再生時間</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={order} onValueChange={setOrder}>
-              <SelectTrigger>
-                <SelectValue placeholder="昇順/降順" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="desc">降順</SelectItem>
-                <SelectItem value="asc">昇順</SelectItem>
-              </SelectContent>
-            </Select>
+      {!!error && (
+        <Alert variant="destructive" className="mb-8">
+          <AlertTitle>エラー</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {!accessDenied && (
+        <>
+          <div className="cinema-fade-up mb-6 flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="h-10 pl-9"
+                placeholder="タイトル・説明を検索"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3 md:w-[320px]">
+              <Select value={sort} onValueChange={setSort}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="並び順" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="added_at">追加日</SelectItem>
+                  <SelectItem value="title">タイトル</SelectItem>
+                  <SelectItem value="duration">再生時間</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={order} onValueChange={setOrder}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="昇順/降順" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">降順</SelectItem>
+                  <SelectItem value="asc">昇順</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {allTags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {allTags.map(tag => (
+            <div className="cinema-fade-up mb-8 flex flex-wrap gap-2">
+              {allTags.map((tag) => (
                 <Button
                   key={tag}
                   variant={selectedTags.includes(tag) ? 'default' : 'outline'}
@@ -141,59 +159,51 @@ export default function Browser() {
                   {tag}
                 </Button>
               ))}
+              {selectedTags.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  onClick={() => setSelectedTags([])}
+                >
+                  クリア
+                </Button>
+              )}
             </div>
           )}
 
           {libraryLoading && (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, idx) => (
-                <Skeleton key={idx} className="h-40 rounded-xl" />
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div key={idx} className="space-y-3">
+                  <Skeleton className="aspect-video w-full rounded-2xl" />
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
               ))}
             </div>
           )}
 
-          {!libraryLoading && !accessDenied && (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredLibrary.map(video => (
-                <Card
+          {!libraryLoading && (
+            <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredLibrary.map((video, index) => (
+                <VideoTile
                   key={video.id}
-                  className="cursor-pointer transition-colors hover:border-primary/50"
-                  onClick={() => openPlayer(video.key, video.title)}
-                >
-                  <CardContent className="space-y-3 p-4">
-                    <div className="aspect-video overflow-hidden rounded-md bg-muted">
-                      {video.thumbnail ? (
-                        <img
-                          src={`/api/stream/${video.thumbnail}`}
-                          alt={video.title}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-3xl">🎬</div>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <div className="line-clamp-1 font-semibold">{video.title}</div>
-                      <div className="text-sm text-muted-foreground">
-                        再生時間: {formatDuration(video.duration)}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {(video.tags || []).map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-                    </div>
-                  </CardContent>
-                </Card>
+                  video={video}
+                  onSelect={openPlayer}
+                  style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
+                />
               ))}
             </div>
           )}
 
-          {!libraryLoading && !accessDenied && filteredLibrary.length === 0 && (
-            <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
+          {!libraryLoading && filteredLibrary.length === 0 && (
+            <div className="cinema-fade-in rounded-2xl border border-dashed border-border/80 px-6 py-16 text-center text-sm text-muted-foreground">
               対象の動画が見つかりません
             </div>
           )}
-        </CardContent>
-      </Card>
+        </>
+      )}
     </main>
   );
 }

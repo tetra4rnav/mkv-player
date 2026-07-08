@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,9 +12,17 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import AccessDeniedCard from '@/components/shared/AccessDeniedCard.jsx';
 
 const emptyForm = {
@@ -68,7 +77,9 @@ export default function Library() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   async function syncFromGcs() {
     setBusy(true);
@@ -107,7 +118,10 @@ export default function Library() {
     const payload = {
       title: form.title.trim(),
       description: form.description.trim(),
-      tags: form.tagsText.split(',').map(v => v.trim()).filter(Boolean),
+      tags: form.tagsText
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean),
       thumbnail: form.thumbnail.trim(),
       duration: form.duration === '' ? null : Number(form.duration),
     };
@@ -143,82 +157,130 @@ export default function Library() {
     setBusy(false);
   }
 
-  const rows = useMemo(() => videos.map(video => (
-    <TableRow key={video.id}>
-      <TableCell>{video.title}</TableCell>
-      <TableCell>
-        <div className="flex flex-wrap gap-2">
-          {(video.tags || []).map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-        </div>
-      </TableCell>
-      <TableCell>{formatDate(video.added_at)}</TableCell>
-      <TableCell>
-        <div className="flex justify-end gap-2">
-        <Button variant="outline" size="sm" onClick={() => openEditor(video)}>編集</Button>
-        <Button variant="destructive" size="sm" onClick={() => deleteVideo(video)}>削除</Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  )), [videos]);
+  const rows = useMemo(
+    () =>
+      videos.map((video) => (
+        <TableRow key={video.id} className="border-border/50">
+          <TableCell className="max-w-[280px] truncate font-medium">
+            {video.title}
+          </TableCell>
+          <TableCell>
+            <div className="flex flex-wrap gap-1.5">
+              {(video.tags || []).map((tag) => (
+                <Badge key={tag} variant="secondary" className="font-normal">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </TableCell>
+          <TableCell className="whitespace-nowrap text-muted-foreground">
+            {formatDate(video.added_at)}
+          </TableCell>
+          <TableCell>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => openEditor(video)}>
+                編集
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => deleteVideo(video)}
+                disabled={busy}
+              >
+                削除
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+      )),
+    [videos, busy]
+  );
 
   return (
     <>
-      <main className="mx-auto w-full max-w-7xl space-y-4 px-4 py-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">動画一覧</h1>
-          <Button onClick={syncFromGcs} disabled={busy}>
+      <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-8 md:px-6 md:pt-12">
+        <section className="cinema-fade-up mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+              ライブラリ管理
+            </h1>
+            <p className="text-sm text-muted-foreground md:text-base">
+              メタデータの編集と GCS からの同期。
+            </p>
+          </div>
+          <Button onClick={syncFromGcs} disabled={busy || accessDenied} className="gap-2">
+            <RefreshCw
+              data-icon="inline-start"
+              className={busy ? 'animate-spin' : undefined}
+            />
             {busy ? '同期中...' : 'GCS同期'}
           </Button>
-        </div>
+        </section>
 
-        {accessDenied && <AccessDeniedCard />}
+        {accessDenied && (
+          <div className="mb-8 cinema-fade-in">
+            <AccessDeniedCard />
+          </div>
+        )}
 
         {!!error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="mb-6">
             <AlertTitle>エラー</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        {loading ? (
-          <div className="text-sm text-muted-foreground">読み込み中...</div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>タイトル</TableHead>
-                  <TableHead>タグ</TableHead>
-                  <TableHead>追加日</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows}
-                {!rows.length && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">動画がありません</TableCell>
+        {!accessDenied &&
+          (loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, idx) => (
+                <Skeleton key={idx} className="h-12 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : (
+            <div className="cinema-fade-in overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50 hover:bg-transparent">
+                    <TableHead>タイトル</TableHead>
+                    <TableHead>タグ</TableHead>
+                    <TableHead>追加日</TableHead>
+                    <TableHead className="text-right">操作</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                </TableHeader>
+                <TableBody>
+                  {rows}
+                  {!rows.length && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className="h-28 text-center text-muted-foreground"
+                      >
+                        動画がありません
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          ))}
       </main>
 
-      <Dialog open={Boolean(editing)} onOpenChange={open => !open && setEditing(null)}>
-        <DialogContent>
+      <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="rounded-2xl sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>動画を編集</DialogTitle>
-            <DialogDescription>{editing?.key}</DialogDescription>
+            <DialogDescription className="break-all">{editing?.key}</DialogDescription>
           </DialogHeader>
           <form onSubmit={saveEdit} className="space-y-4">
             <div className="space-y-2">
               <Label>タイトル</Label>
               <Input
-                  value={form.title}
-                  onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))}
-                  required
+                value={form.title}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, title: e.target.value }))
+                }
+                required
               />
             </div>
             <div className="space-y-2">
@@ -226,21 +288,27 @@ export default function Library() {
               <Textarea
                 rows={3}
                 value={form.description}
-                onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, description: e.target.value }))
+                }
               />
             </div>
             <div className="space-y-2">
               <Label>タグ (カンマ区切り)</Label>
               <Input
-                  value={form.tagsText}
-                  onChange={e => setForm(prev => ({ ...prev, tagsText: e.target.value }))}
+                value={form.tagsText}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, tagsText: e.target.value }))
+                }
               />
             </div>
             <div className="space-y-2">
               <Label>サムネキー</Label>
               <Input
-                  value={form.thumbnail}
-                  onChange={e => setForm(prev => ({ ...prev, thumbnail: e.target.value }))}
+                value={form.thumbnail}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, thumbnail: e.target.value }))
+                }
               />
             </div>
             <div className="space-y-2">
@@ -249,7 +317,9 @@ export default function Library() {
                 type="number"
                 min="0"
                 value={form.duration}
-                onChange={e => setForm(prev => ({ ...prev, duration: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, duration: e.target.value }))
+                }
               />
             </div>
             <DialogFooter>
@@ -257,7 +327,7 @@ export default function Library() {
                 キャンセル
               </Button>
               <Button type="submit" disabled={saving}>
-                  {saving ? '保存中...' : '保存'}
+                {saving ? '保存中...' : '保存'}
               </Button>
             </DialogFooter>
           </form>
