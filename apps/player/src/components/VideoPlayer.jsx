@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
-import styles from './VideoPlayer.module.css';
 
 export default function VideoPlayer({
   src,
@@ -135,5 +134,5 @@ export default function VideoPlayer({
     };
   }, [subtitleKey]);
 
-  return <div className={styles.wrap} ref={containerRef} />;
+  return <div className="video-player-wrap" ref={containerRef} />;
 }

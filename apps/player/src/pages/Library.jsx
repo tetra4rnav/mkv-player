@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const emptyForm = {
   title: '',
@@ -37,6 +38,7 @@ export default function Library() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [error, setError] = useState('');
 
   const [editing, setEditing] = useState(null);
@@ -46,8 +48,15 @@ export default function Library() {
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
+    setAccessDenied(false);
     const response = await fetch('/api/library?sort=added_at&order=desc');
     if (!response.ok) {
+      if (response.status === 401) {
+        setAccessDenied(true);
+        setVideos([]);
+        setLoading(false);
+        return;
+      }
       const payload = await response.json().catch(() => ({}));
       setError(payload.error || 'ライブラリの読み込みに失敗しました');
       setVideos([]);
@@ -64,9 +73,16 @@ export default function Library() {
   async function syncFromGcs() {
     setBusy(true);
     setError('');
+    setAccessDenied(false);
     const response = await fetch('/api/library/sync', { method: 'POST' });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) setError(payload.error || 'GCS同期に失敗しました');
+    if (!response.ok) {
+      if (response.status === 401) {
+        setAccessDenied(true);
+      } else {
+        setError(payload.error || 'GCS同期に失敗しました');
+      }
+    }
     await load();
     setBusy(false);
   }
@@ -164,7 +180,21 @@ export default function Library() {
           </Button>
         </div>
 
-        {error && <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {accessDenied && (
+          <Alert variant="destructive">
+            <AlertTitle>Access denied</AlertTitle>
+            <AlertDescription>
+              Cloudflare Access で許可されたメールアドレスでログインしてください。
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!!error && (
+          <Alert variant="destructive">
+            <AlertTitle>エラー</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         {loading ? (
           <div className="text-sm text-muted-foreground">読み込み中...</div>

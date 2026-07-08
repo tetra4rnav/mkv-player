@@ -12,10 +12,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Browser() {
   const [libraryVideos, setLibraryVideos] = useState([]);
   const [libraryLoading, setLibraryLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('added_at');
   const [order, setOrder] = useState('desc');
@@ -25,6 +28,8 @@ export default function Browser() {
 
   const loadLibrary = useCallback(async () => {
     setLibraryLoading(true);
+    setAccessDenied(false);
+    setError('');
     const params = new URLSearchParams();
     if (query.trim()) params.set('q', query.trim());
     if (sort) params.set('sort', sort);
@@ -32,11 +37,18 @@ export default function Browser() {
 
     const response = await fetch('/api/library?' + params.toString());
     if (!response.ok) {
+      if (response.status === 401) {
+        setAccessDenied(true);
+        setLibraryVideos([]);
+        setLibraryLoading(false);
+        return;
+      }
       setLibraryVideos([]);
       setLibraryLoading(false);
+      setError('ライブラリの読み込みに失敗しました');
       return;
     }
-    const payload = await response.json();
+    const payload = await response.json().catch(() => ({}));
     setLibraryVideos(Array.isArray(payload.videos) ? payload.videos : []);
     setLibraryLoading(false);
   }, [query, sort, order]);
@@ -90,6 +102,22 @@ export default function Browser() {
             <CardTitle>ライブラリ</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {accessDenied && (
+              <Alert variant="destructive">
+                <AlertTitle>Access denied</AlertTitle>
+                <AlertDescription>
+                  Cloudflare Access で許可されたメールアドレスでログインしてください。
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {!!error && (
+              <Alert variant="destructive">
+                <AlertTitle>エラー</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="grid gap-3 md:grid-cols-3">
               <Input
                 placeholder="タイトル・説明を検索"
@@ -140,7 +168,7 @@ export default function Browser() {
               </div>
             )}
 
-            {!libraryLoading && (
+            {!libraryLoading && !accessDenied && (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredLibrary.map(video => (
                   <Card
@@ -175,7 +203,7 @@ export default function Browser() {
               </div>
             )}
 
-            {!libraryLoading && filteredLibrary.length === 0 && (
+            {!libraryLoading && !accessDenied && filteredLibrary.length === 0 && (
               <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
                 対象の動画が見つかりません
               </div>

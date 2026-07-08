@@ -101,3 +101,50 @@
 
 .video-js { width: 100% !important; }
 .vjs-big-play-button { display: none !important; }
+
+/* Video.js wrapper (replaces VideoPlayer.module.css) */
+.video-player-wrap {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,.7);
+  background: #000;
+}
+
+.video-player-wrap .video-js {
+  font-family: inherit;
+}
+
+.video-player-wrap .vjs-control-bar {
+  background: linear-gradient(transparent, rgba(0,0,0,.85));
+  padding: 0 8px 4px;
+}
+
+.video-player-wrap .vjs-play-progress,
+.video-player-wrap .vjs-volume-level {
+  background: var(--accent);
+}
+
+.video-player-wrap .vjs-load-progress {
+  background: rgba(124,110,245,.3);
+}
+
+.video-player-wrap .vjs-slider:focus {
+  box-shadow: 0 0 0 3px rgba(124,110,245,.4);
+}
+
+.video-player-wrap .vjs-menu-button-popup .vjs-menu .vjs-menu-content {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.video-player-wrap .vjs-menu li {
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.video-player-wrap .vjs-menu li:hover,
+.video-player-wrap .vjs-menu li.vjs-selected {
+  color: var(--text);
+  background: var(--border);
+}
